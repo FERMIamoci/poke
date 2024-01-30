@@ -1,43 +1,41 @@
-import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { revalidatePath } from "next/cache";
-import PokemonCard from "@/components/PokemonCard";
+"use client";
+import { PokemonCard } from "@/components/PokemonCard";
+import React, { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 
-export default async function Profile() {
-	const cookieStore = cookies();
-	const supabase = createClient(cookieStore);
+import { Deck, getUserData, getUserDeck, updateName } from "@/utils/api";
 
-	// get user
-	const {
-		data: { user },
-	} = await supabase.auth.getUser();
+export default function Profile() {
+	const [newName, setNewName] = useState("");
+	const [user, setUser] = useState({
+		id: "",
+		email: "",
+		name: "",
+	});
+	const [deck, setDeck] = useState<Deck>();
+	const [pokemonChange, setPokemonChange] = useState(false);
 
-	// redirect to login if not logged in
-	if (!user) return redirect("/login");
+	useEffect(() => {
+		const fetchData = async () => {
+			const userData = await getUserData();
+			setUser(userData);
 
-	// get user data
-	const {
-		data: { name, deck },
-	} = await supabase.from("users").select("*").eq("id", user?.id).single();
+			if (userData && userData.id) {
+				const userDeck = await getUserDeck(userData.id);
+				if (userDeck) {
+					setDeck(userDeck);
+				}
+			}
+		};
 
-	const updateName = async (formData: FormData) => {
-		"use server";
+		fetchData();
+	}, [pokemonChange]);
 
-		const name = formData.get("name") as string;
-		const cookieStore = cookies();
-		const supabase = createClient(cookieStore);
-
-		const { error } = await supabase
-			.from("users")
-			.update({ name })
-			.eq("id", user?.id);
-
-		if (error) {
-			return redirect("/profile?message=Could not update name");
+	const changeName = async () => {
+		if (newName !== "") {
+			await updateName(newName);
 		}
-
-		revalidatePath("/profile");
+		setPokemonChange(!pokemonChange);
 	};
 
 	return (
@@ -45,20 +43,56 @@ export default async function Profile() {
 			<div className="font-semibold text-2xl">Profile</div>
 			<div>Email: {user.email}</div>
 			<div>Id: {user.id}</div>
-			<div>Role: {user.role}</div>
-			<div>Username: {name}</div>
-			<form action={updateName}>
-				<input type="text" name="name" placeholder="Name" />
-				<button>Update Name</button>
-			</form>
-			<div>Deck:</div>
-			<div className="flex flex-col mx-[20%]">
-				<div className="grid grid-cols-3 gap-4">
-					{Object.keys(deck).map((key) => {
-						return <PokemonCard key={key} pokeId={key} />;
-					})}
+			<div>Username: {user.name}</div>
+			<input
+				type="text"
+				name="name"
+				placeholder="Name"
+				onChange={(e) => setNewName(e.target.value)}
+			/>
+			<Button onClick={() => changeName()}>Update Name</Button>
+			<div className="font-semibold text-2xl">Deck</div>
+
+			{deck ? (
+				<div className="flex flex-row gap-8">
+					<div className="flex flex-col">
+						{Object.keys(deck.deck).map((key) => {
+							return (
+								deck.deck[key].battle && (
+									<div key={key}>
+										<PokemonCard
+											pokeId={key}
+											action="remove"
+											onClick={() =>
+												setPokemonChange(!pokemonChange)
+											}
+										/>
+									</div>
+								)
+							);
+						})}
+					</div>
+					<div className="grid grid-cols-3 gap-4">
+						{Object.keys(deck.deck).map((key) => {
+							return (
+								!deck.deck[key].battle && (
+									<div key={key}>
+										<PokemonCard
+											pokeId={key}
+											action="add"
+											onClick={() =>
+												setPokemonChange(!pokemonChange)
+											}
+										/>
+									</div>
+								)
+							);
+						})}
+					</div>
 				</div>
-			</div>
+			) : (
+				<div>Loading...</div>
+			)}
 		</div>
 	);
 }
