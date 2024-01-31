@@ -45,11 +45,11 @@ export function PokemonCard({
 	};
 
 	return (
-		<Card className="flex flex-col p-3 items-center">
+		<Card className="flex flex-col p-2 items-center">
 			<Image
 				src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokeId}.png`}
-				width={100}
-				height={100}
+				width={75}
+				height={75}
 				alt="pokemon"
 				priority={true}
 			/>
