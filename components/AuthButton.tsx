@@ -1,40 +1,32 @@
-import { createClient } from '@/utils/supabase/server'
-import Link from 'next/link'
-import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
+"use client";
+import Link from "next/link";
+import { Button } from "./ui/button";
+import { useState, useEffect } from "react";
+import { isLogged, signOut } from "@/utils/api";
 
-export default async function AuthButton() {
-  const cookieStore = cookies()
-  const supabase = createClient(cookieStore)
+export default function AuthButton() {
+	const [logged, setLogged] = useState(false);
+	const handleSignOut = async () => {
+    setLogged(false);
+		await signOut();
+	};
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+	useEffect(() => {
+		const fetchUser = async () => {
+			isLogged().then((res) => {
+				setLogged(res);
+			});
+		};
+		fetchUser();
+	}, [logged]);
 
-  const signOut = async () => {
-    'use server'
-
-    const cookieStore = cookies()
-    const supabase = createClient(cookieStore)
-    await supabase.auth.signOut()
-    return redirect('/login')
-  }
-
-  return user ? (
-    <Link className="flex items-center gap-4" href="/profile">
-      Profile
-      <form action={signOut}>
-        <button className="py-2 px-4 rounded-md no-underline bg-btn-background hover:bg-btn-background-hover">
-          Logout
-        </button>
-      </form>
-    </Link>
-  ) : (
-    <Link
-      href="/login"
-      className="py-2 px-3 flex rounded-md no-underline bg-btn-background hover:bg-btn-background-hover"
-    >
-      Login
-    </Link>
-  )
+	return logged ? (
+		<Button onClick={handleSignOut}>Logout</Button>
+	) : (
+		<Link
+			href="/login"
+			className="py-2 px-3 flex rounded-md no-underline bg-btn-background hover:bg-btn-background-hover">
+			Login
+		</Link>
+	);
 }

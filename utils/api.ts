@@ -1,9 +1,8 @@
 "use server";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { SupabaseClient } from "@supabase/supabase-js";
 
 export type Deck = {
 	"deck": {
@@ -15,36 +14,35 @@ export type Deck = {
 	};
 };
 
-let supabase: SupabaseClient<any, "public", any>;
-
-function initializeSupabase() {
- if (!supabase) {
-    const cookieStore = cookies();
-    supabase = createClient(cookieStore);
- }
- return supabase;
-}
-
-async function getUserData() {
-	const supabase = initializeSupabase();
+async function getUser() {
+	const cookieStore = cookies();
+	const supabase = createClient(cookieStore);
 
 	const {
 		data: { user },
 	} = await supabase.auth.getUser();
 
-	console.log(user);
-
 	if (!user) return redirect("/login");
 
+	return user;
+}
+
+async function getUserData() {
+	const cookieStore = cookies();
+	const supabase = createClient(cookieStore);
+
+	const user = await getUser();
+
 	const {
-		data: { id, email, name },
+		data: { id, name },
 	} = await supabase.from("users").select("*").eq("id", user?.id).single();
 
-	return { id, email, name };
+	return { id, name };
 }
 
 async function getUserDeck(id: string) {
-	const supabase = initializeSupabase();
+	const cookieStore = cookies();
+	const supabase = createClient(cookieStore);
 
 	const { data } = await supabase
 		.from("users")
@@ -56,7 +54,8 @@ async function getUserDeck(id: string) {
 }
 
 const updateName = async (name: string) => {
-const supabase = initializeSupabase();
+const cookieStore = cookies();
+	const supabase = createClient(cookieStore);
 	const user = await getUserData();
 
 	const { error } = await supabase
@@ -73,7 +72,8 @@ const supabase = initializeSupabase();
 };
 
 async function toggleBattleStatus(pokeId: string, status: boolean) {
- const supabase = initializeSupabase();
+ const cookieStore = cookies();
+	const supabase = createClient(cookieStore);
  const user = await getUserData();
  const deck = await getUserDeck(user.id) as Deck;
  const { error } = await supabase
@@ -97,7 +97,8 @@ const addToBattle = async (pokeId: string) => {
 };
 
 const isLogged = async () => {
-const supabase = initializeSupabase();
+const cookieStore = cookies();
+	const supabase = createClient(cookieStore);
 
 	const {
 		data: { user },
@@ -108,4 +109,57 @@ const supabase = initializeSupabase();
 	return true;
 }
 
-export { getUserData, getUserDeck, updateName, removeFromBattle, addToBattle, isLogged};
+async function signOut() {
+	const cookieStore = cookies();
+	const supabase = createClient(cookieStore);
+
+	const { error } = await supabase.auth.signOut();
+
+	if (error) {
+		return redirect("/?message=Could not sign out");
+	}
+
+	revalidatePath("/");
+
+	return redirect("/?message=Signed out");
+}
+
+async function signIn(email: string, password: string) {
+	const cookieStore = cookies();
+	const supabase = createClient(cookieStore);
+
+	const { error } = await supabase.auth.signInWithPassword({
+		email,
+		password,
+	});
+
+	if (error) {
+		return redirect("/login?message=Could not sign in");
+	}
+
+	revalidatePath("/");
+
+	return redirect("/?message=Signed in");
+}
+
+async function signUp(email: string, password: string) {
+	const cookieStore = cookies();
+	const supabase = createClient(cookieStore);
+
+	const { error } = await supabase.auth.signUp({
+		email,
+		password,
+		options: {
+			emailRedirectTo:
+				`${headers().get("origin")}/auth/callback`,
+		},
+	});
+
+	if (error) {
+		return redirect("/login?message=Could not sign up");
+	}
+
+	console.log("Check your email for the confirmation link");
+}
+
+export {getUser, getUserData, getUserDeck, updateName, removeFromBattle, addToBattle, isLogged, signOut, signIn, signUp};
