@@ -3,6 +3,7 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 export type Deck = {
 	"deck": {
@@ -14,13 +15,24 @@ export type Deck = {
 	};
 };
 
+let supabase: SupabaseClient<any, "public", any>;
+
+function initializeSupabase() {
+ if (!supabase) {
+    const cookieStore = cookies();
+    supabase = createClient(cookieStore);
+ }
+ return supabase;
+}
+
 async function getUserData() {
-	const cookieStore = cookies();
-	const supabase = createClient(cookieStore);
+	const supabase = initializeSupabase();
 
 	const {
 		data: { user },
 	} = await supabase.auth.getUser();
+
+	console.log(user);
 
 	if (!user) return redirect("/login");
 
@@ -32,8 +44,7 @@ async function getUserData() {
 }
 
 async function getUserDeck(id: string) {
-	const cookieStore = cookies();
-	const supabase = createClient(cookieStore);
+	const supabase = initializeSupabase();
 
 	const { data } = await supabase
 		.from("users")
@@ -45,8 +56,7 @@ async function getUserDeck(id: string) {
 }
 
 const updateName = async (name: string) => {
-	const cookieStore = cookies();
-	const supabase = createClient(cookieStore);
+const supabase = initializeSupabase();
 	const user = await getUserData();
 
 	const { error } = await supabase
@@ -58,42 +68,44 @@ const updateName = async (name: string) => {
 		return redirect("/profile?message=Could not update name");
 	}
 
-	revalidatePath("/");
+	revalidatePath("/profile");
+	return redirect("/profile?message=Name updated");
 };
 
-const removeFromBattle = async (pokeId: string) => {
-	const cookieStore = cookies();
-	const supabase = createClient(cookieStore);
-	const user = await getUserData();
-	const deck = await getUserDeck(user.id) as Deck;
-	const { error } = await supabase
-		.from("users")
-		.update({ deck: { ...deck.deck, [pokeId]: { ...deck.deck[pokeId], battle: false } } })
-		.eq("id", user.id);
+async function toggleBattleStatus(pokeId: string, status: boolean) {
+ const supabase = initializeSupabase();
+ const user = await getUserData();
+ const deck = await getUserDeck(user.id) as Deck;
+ const { error } = await supabase
+    .from("users")
+    .update({ deck: { ...deck.deck, [pokeId]: { ...deck.deck[pokeId], battle: status } } })
+    .eq("id", user.id);
 
-	if (error) {
-		return redirect("/profile?message=Could not remove from battle");
-	}
+ if (error) {
+    return redirect(`/deck?message=${status ? "Could not add to battle" : "Could not remove from battle"}`);
+ }
 
-	revalidatePath("/");
+ revalidatePath("/deck");
 }
+
+const removeFromBattle = async (pokeId: string) => {
+ return toggleBattleStatus(pokeId, false);
+};
 
 const addToBattle = async (pokeId: string) => {
-	const cookieStore = cookies();
-	const supabase = createClient(cookieStore);
-	const user = await getUserData();
-	const deck = await getUserDeck(user.id) as Deck;
+ return toggleBattleStatus(pokeId, true);
+};
 
-	const { error } = await supabase
-		.from("users")
-		.update({ deck: { ...deck.deck, [pokeId]: { ...deck.deck[pokeId], battle: true } } })
-		.eq("id", user.id);
+const isLogged = async () => {
+const supabase = initializeSupabase();
 
-	if (error) {
-		return redirect("/profile?message=Could not add to battle");
-	}
+	const {
+		data: { user },
+	} = await supabase.auth.getUser();
 
-	revalidatePath("/");
+	if (!user) return false;
+
+	return true;
 }
 
-export { getUserData, getUserDeck, updateName, removeFromBattle, addToBattle };
+export { getUserData, getUserDeck, updateName, removeFromBattle, addToBattle, isLogged};
