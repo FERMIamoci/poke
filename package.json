@@ -13,6 +13,7 @@
     "autoprefixer": "10.4.15",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
+    "fast-average-color": "^9.4.0",
     "geist": "^1.0.0",
     "next": "latest",
     "postcss": "8.4.29",

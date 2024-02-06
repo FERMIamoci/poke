@@ -5,20 +5,31 @@ import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 
 import { removeFromBattle, addToBattle } from "@/utils/api";
+import { FastAverageColor } from "fast-average-color";
 
 export function PokemonCard({
 	pokeId,
 	action,
 	onClick,
+	size,
 }: {
 	pokeId: string;
 	action?: string;
 	onClick?: () => void;
+	size?: number;
 }) {
 	const [data, setData] = useState<{ name: string } | null>(null);
+	const [color, setColor] = useState<string>("#000000");
 
 	useEffect(() => {
 		const fetchData = async () => {
+			setColor(
+				(
+					await new FastAverageColor().getColorAsync(
+						`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokeId}.png`
+					)
+				).hex.substring(1)
+			);
 			if (pokeId !== "undefined") {
 				const response = await fetch(
 					`https://pokeapi.co/api/v2/pokemon/${pokeId}`
@@ -45,15 +56,20 @@ export function PokemonCard({
 	};
 
 	return (
-		<Card className="flex flex-col p-2 items-center">
+		<Card
+			className="flex flex-col p-2 items-center"
+			style={{
+				backgroundColor: `#${color}`,
+			}}>
 			<Image
 				src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokeId}.png`}
-				width={75}
-				height={75}
+				width={size || 75}
+				height={size || 75}
 				alt="pokemon"
 				priority={true}
 			/>
-			<div>
+
+			<div className="font-semibold pb-4">
 				{data?.name?.charAt(0).toUpperCase() + data?.name?.slice(1)}
 			</div>
 			{action === "remove" && (

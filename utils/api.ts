@@ -68,6 +68,7 @@ const cookieStore = cookies();
 	}
 
 	revalidatePath("/profile");
+
 	return redirect("/profile?message=Name updated");
 };
 
@@ -119,8 +120,6 @@ async function signOut() {
 		return redirect("/?message=Could not sign out");
 	}
 
-	revalidatePath("/");
-
 	return redirect("/?message=Signed out");
 }
 
@@ -136,8 +135,6 @@ async function signIn(email: string, password: string) {
 	if (error) {
 		return redirect("/login?message=Could not sign in");
 	}
-
-	revalidatePath("/");
 
 	return redirect("/?message=Signed in");
 }

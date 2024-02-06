@@ -1,15 +1,20 @@
 "use client";
-import Link from "next/link";
+
 import { Button } from "./ui/button";
 import { useState, useEffect } from "react";
 import { isLogged, signOut } from "@/utils/api";
+import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 export default function AuthButton() {
+	const router = useRouter();
 	const [logged, setLogged] = useState(false);
 	const handleSignOut = async () => {
-    setLogged(false);
+		setLogged(false);
 		await signOut();
 	};
+
+	const message = useSearchParams().get("message");
 
 	useEffect(() => {
 		const fetchUser = async () => {
@@ -18,15 +23,16 @@ export default function AuthButton() {
 			});
 		};
 		fetchUser();
-	}, [logged]);
+	}, [logged, message]);
 
 	return logged ? (
 		<Button onClick={handleSignOut}>Logout</Button>
 	) : (
-		<Link
-			href="/login"
-			className="py-2 px-3 flex rounded-md no-underline bg-btn-background hover:bg-btn-background-hover">
+		<Button
+			onClick={() => {
+				router.push("/login");
+			}}>
 			Login
-		</Link>
+		</Button>
 	);
 }
