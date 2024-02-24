@@ -2,16 +2,13 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
-import { getUserData, updateName } from "@/utils/api";
+import { User, getUserData, updateName } from "@/utils/api";
 
 
 export default function Profile() {
 	const [newName, setNewName] = useState("");
 	const [name, setName] = useState("");
-	const [user, setUser] = useState({
-		id: "",
-		name: "",
-	});
+	const [user, setUser] = useState<User>();
 
 	useEffect(() => {
 		const fetchData = async () => {
