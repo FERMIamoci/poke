@@ -2,15 +2,12 @@
 import { PokemonCard } from "@/components/PokemonCard";
 import React, { useEffect, useState } from "react";
 
-import { Deck, getUserData, getUserDeck } from "@/utils/api";
+import { Deck, User,  getUserData, getUserDeck } from "@/utils/api";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DeckPage() {
 	const [deck, setDeck] = useState<Deck>();
-	const [user, setUser] = useState({
-		id: "",
-		name: "",
-	});
+	const [user, setUser] = useState<User>();
 	const [pokemonChange, setPokemonChange] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	useEffect(() => {
