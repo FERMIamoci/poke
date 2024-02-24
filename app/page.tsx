@@ -13,14 +13,22 @@ export default function Index() {
 						className="font-bold hover:underline"
 						rel="noreferrer">
 						Tommaso Coviello
-					</a>
-					{' '}&amp;&amp;{' '}
+					</a>{" "}
+					&amp;&amp;{" "}
 					<a
 						href="https://github.com/DuPont9029"
 						target="_blank"
 						className="font-bold hover:underline"
 						rel="noreferrer">
 						David Novelli
+					</a>{" "}
+					&amp;&amp;{" "}
+					<a
+						href="https://github.com/Mattiarotelli"
+						target="_blank"
+						className="font-bold hover:underline"
+						rel="noreferrer">
+						Mattia Rotelli
 					</a>
 				</p>
 			</footer>
