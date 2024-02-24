@@ -2,39 +2,39 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
-import {getUserData, updateName } from "@/utils/api";
-import { useRouter } from "next/navigation";
+import { getUserData, updateName } from "@/utils/api";
+
 
 export default function Profile() {
-	const router = useRouter();
 	const [newName, setNewName] = useState("");
+	const [name, setName] = useState("");
 	const [user, setUser] = useState({
 		id: "",
 		name: "",
 	});
-	const [event, setEvent] = useState(false);
 
 	useEffect(() => {
 		const fetchData = async () => {
-			setUser(await getUserData());
-			console.log("User data:", user);
+			const userData = await getUserData();
+			setUser(userData);
+			setName(userData.name);
 		};
 
 		fetchData();
-	}, [event]);
+	}, []);
 
 	const changeName = async () => {
 		if (newName !== "") {
 			await updateName(newName);
+			setName(newName);
 		}
-		setEvent(!event);
 	};
 
 	return (
 		<div className="flex flex-col w-full">
 			<div className="font-semibold text-2xl">Profile</div>
 			<div>Id: {user?.id}</div>
-			<div>Username: {user?.name}</div>
+			<div>Username: {name}</div>
 			<input
 				type="text"
 				name="name"
